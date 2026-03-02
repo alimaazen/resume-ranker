@@ -198,8 +198,13 @@ async function analyzeResumeWithLLaMA(resumeText, weights) {
             try {
                 analysis = await analyzeWithGroq(resumeText, weights);
             } catch (e) {
-                console.warn('Groq failed, trying Ollama...');
-                analysis = await analyzeWithOllama(resumeText, weights);
+                if (require.main === module) {
+                    console.warn('Groq failed, trying Ollama locally...');
+                    analysis = await analyzeWithOllama(resumeText, weights);
+                } else {
+                    console.warn('Groq failed on Netlify, falling back to basic analysis...');
+                    throw e; // This will hit the outer catch and trigger fallbackAnalysis
+                }
             }
         } else {
             try {
