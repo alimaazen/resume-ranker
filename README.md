@@ -83,7 +83,17 @@ Edit `.env` file to configure:
 PORT=3000                              # Server port
 OLLAMA_HOST=http://localhost:11434    # Ollama server URL
 OLLAMA_MODEL=llama3.2                 # LLaMA model to use
+GROQ_API_KEY=gsk_your_key_here         # Groq API Key (Recommended for Cloud)
+PREFER_GROQ=true                       # Set to true to use Groq by default
 ```
+
+## ☁️ Deployment (Netlify)
+
+This project is configured for **Netlify Functions**.
+1. Push to GitHub.
+2. Connect to Netlify.
+3. Add `GROQ_API_KEY` and `PREFER_GROQ` as Environment Variables in Netlify.
+
 
 ### Available Models
 
