@@ -150,48 +150,58 @@ async function processFiles(files) {
         formData.append('keywordsWeight', weights.keywords);
 
         // Upload to server
-        const response = await fetch(`${API_BASE_URL}/upload`, {
-            method: 'POST',
-            body: formData
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/upload`, {
+                method: 'POST',
+                body: formData
+            });
 
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-
-        console.log('Server response:', result);
-
-        if (result.success && result.candidates) {
-            // Filter out any error results
-            const validCandidates = result.candidates.filter(c => !c.error);
-            const errorCount = result.candidates.length - validCandidates.length;
-
-            if (validCandidates.length > 0) {
-                candidates.push(...validCandidates);
-                filteredCandidates = [...candidates];
-                renderCandidates();
-                updateStats();
-                updateAnalytics();
-
-                showToast(`✅ Successfully analyzed ${validCandidates.length} resume(s)!`, 'success');
-
-                if (errorCount > 0) {
-                    setTimeout(() => {
-                        showToast(`⚠️ ${errorCount} resume(s) had errors`, 'warning');
-                    }, 3500);
-                }
-
-                // Scroll to rankings
-                setTimeout(() => {
-                    document.getElementById('rankings').scrollIntoView({ behavior: 'smooth' });
-                }, 500);
-            } else {
-                throw new Error('No resumes could be processed');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Server error: ${response.statusText}`);
             }
-        } else {
+
+            const result = await response.json();
+            console.log('Server response:', result);
+
+            if (result.success && result.candidates) {
+                const validCandidates = result.candidates.filter(c => !c.error);
+                if (validCandidates.length > 0) {
+                    candidates.push(...validCandidates);
+                    filteredCandidates = [...candidates];
+                    renderCandidates();
+                    updateStats();
+                    updateAnalytics();
+                    showToast(`✅ Successfully analyzed ${validCandidates.length} resume(s)!`, 'success');
+
+                    setTimeout(() => {
+                        document.getElementById('rankings').scrollIntoView({ behavior: 'smooth' });
+                    }, 500);
+                    return;
+                }
+            }
             throw new Error('Invalid server response');
+
+        } catch (serverError) {
+            console.warn('📡 Server unreachable or error occurred, using local fallback:', serverError.message);
+            showToast('⚠️ Server offline - Using local basic analysis', 'warning');
+
+            // Local Fallback Logic
+            for (const file of validFiles) {
+                const text = await readFileAsText(file);
+                const weights = getWeights();
+                const analysis = localFrontendAnalysis(text, weights, file.name);
+                candidates.push(analysis);
+            }
+
+            filteredCandidates = [...candidates];
+            renderCandidates();
+            updateStats();
+            updateAnalytics();
+
+            setTimeout(() => {
+                document.getElementById('rankings').scrollIntoView({ behavior: 'smooth' });
+            }, 500);
         }
 
     } catch (error) {
@@ -746,3 +756,61 @@ window.addEventListener('resize', () => {
         updateScoreDistribution();
     }
 });
+// ===== LOCAL FALLBACK HELPERS =====
+async function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+function localFrontendAnalysis(resumeText, weights, filename) {
+    console.log('Performing local frontend analysis...');
+
+    const emailMatch = resumeText.match(/[\w.-]+@[\w.-]+\.\w+/);
+    const phoneMatch = resumeText.match(/(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+
+    const commonSkills = [
+        'JavaScript', 'Python', 'Java', 'React', 'Node.js', 'SQL', 'AWS', 'Docker', 'Git'
+    ];
+
+    const foundSkills = commonSkills.filter(skill =>
+        resumeText.toLowerCase().includes(skill.toLowerCase())
+    );
+
+    const experience = 3; // Static estimate for local
+    const experienceScore = 70;
+    const skillsScore = Math.min(foundSkills.length * 15, 100);
+    const educationScore = 80;
+    const keywordsScore = 75;
+
+    const matchScore = Math.round(
+        (experienceScore * weights.experience / 100) +
+        (skillsScore * weights.skills / 100) +
+        (educationScore * weights.education / 100) +
+        (keywordsScore * weights.keywords / 100)
+    );
+
+    return {
+        id: Date.now() + Math.random(),
+        provider: 'fallback',
+        name: filename.split('.')[0],
+        title: "Candidate (Local Analysis)",
+        email: emailMatch ? emailMatch[0] : "not.found@email.com",
+        phone: phoneMatch ? phoneMatch[0] : "N/A",
+        location: "Local analysis",
+        experience: experience,
+        skills: foundSkills.length > 0 ? foundSkills : ['General Skills'],
+        education: "Analyzed locally",
+        experienceScore,
+        skillsScore,
+        educationScore,
+        keywordsScore,
+        matchScore,
+        summary: "This candidate was analyzed using basic local logic because the server was unavailable.",
+        achievements: ["Analyzed via frontend fallback"],
+        certifications: []
+    };
+}
