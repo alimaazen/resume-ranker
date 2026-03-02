@@ -318,7 +318,10 @@ function filterCandidates() {
     });
 
     renderCandidates();
+    updateStats();
+    updateAnalytics();
 }
+
 
 // ===== VIEW SWITCHING =====
 function switchView(view) {
@@ -472,26 +475,51 @@ function updateStats() {
         : 0;
     const topCandidates = candidates.filter(c => c.matchScore >= 85).length;
 
-    animateValue('totalResumes', 0, totalResumes, 1000);
-    animateValue('avgScore', 0, avgScore, 1000);
-    animateValue('topCandidates', 0, topCandidates, 1000);
+    const totalElem = document.getElementById('totalResumes');
+    const avgElem = document.getElementById('avgScore');
+    const topElem = document.getElementById('topCandidates');
+
+    const currentTotal = parseInt(totalElem.textContent) || 0;
+    const currentAvg = parseInt(avgElem.textContent) || 0;
+    const currentTop = parseInt(topElem.textContent) || 0;
+
+    animateValue('totalResumes', currentTotal, totalResumes, 800);
+    animateValue('avgScore', currentAvg, avgScore, 800);
+    animateValue('topCandidates', currentTop, topCandidates, 800);
 }
+
 
 function animateValue(id, start, end, duration) {
     const element = document.getElementById(id);
+    if (!element) return;
+
+    if (start === end) {
+        element.textContent = Math.round(end);
+        return;
+    }
+
     const range = end - start;
     const increment = range / (duration / 16);
     let current = start;
+
+    // Clear existing timer if any
+    if (element.dataset.timerId) {
+        clearInterval(parseInt(element.dataset.timerId));
+    }
 
     const timer = setInterval(() => {
         current += increment;
         if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
             current = end;
             clearInterval(timer);
+            delete element.dataset.timerId;
         }
         element.textContent = Math.round(current);
     }, 16);
+
+    element.dataset.timerId = timer;
 }
+
 
 // ===== ANALYTICS =====
 function updateAnalytics() {
