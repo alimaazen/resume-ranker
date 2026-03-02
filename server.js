@@ -300,20 +300,22 @@ function fallbackAnalysis(resumeText, weights) {
     };
 }
 
-// ===== API ENDPOINTS =====
+// ===== API ROUTER =====
+const apiRouter = express.Router();
 
 // Health check
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
     res.json({
         status: 'ok',
         message: 'Server is running',
         ollamaHost: OLLAMA_HOST,
-        model: OLLAMA_MODEL
+        model: OLLAMA_MODEL,
+        groqAvailable: !!GROQ_API_KEY
     });
 });
 
 // Check Ollama availability
-app.get('/api/check-ollama', async (req, res) => {
+apiRouter.get('/check-ollama', async (req, res) => {
     try {
         const response = await axios.get(`${OLLAMA_HOST}/api/tags`, { timeout: 5000 });
         const models = response.data.models || [];
@@ -337,13 +339,12 @@ app.get('/api/check-ollama', async (req, res) => {
 });
 
 // Upload and analyze resumes
-app.post('/api/upload', upload.array('resumes', 10), async (req, res) => {
+apiRouter.post('/upload', upload.array('resumes', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             console.error('Upload failed: No files in request');
             return res.status(400).json({ error: 'No files uploaded' });
         }
-
 
         const weights = {
             experience: parseInt(req.body.experienceWeight) || 30,
@@ -396,6 +397,11 @@ app.post('/api/upload', upload.array('resumes', 10), async (req, res) => {
         });
     }
 });
+
+// Mount the router at both potential base paths
+app.use('/api', apiRouter);
+app.use('/.netlify/functions/api', apiRouter);
+
 
 // Start server only if not running as a function
 if (require.main === module) {
