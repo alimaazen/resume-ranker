@@ -335,8 +335,10 @@ app.get('/api/check-ollama', async (req, res) => {
 app.post('/api/upload', upload.array('resumes', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
+            console.error('Upload failed: No files in request');
             return res.status(400).json({ error: 'No files uploaded' });
         }
+
 
         const weights = {
             experience: parseInt(req.body.experienceWeight) || 30,
@@ -381,16 +383,17 @@ app.post('/api/upload', upload.array('resumes', 10), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Upload error:', error);
+        console.error('❌ Upload error:', error);
         res.status(500).json({
             error: 'Server error processing resumes',
-            message: error.message
+            message: error.message,
+            details: process.env.NODE_ENV === 'production' ? null : error.stack
         });
     }
 });
 
 // Start server only if not running as a function
-if (process.env.NODE_ENV !== 'production' && require.main === module) {
+if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`\n🚀 Resume Rank Pro Server Running!`);
         console.log(`📍 URL: http://localhost:${PORT}`);
