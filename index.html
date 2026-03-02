@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResumeRank - Smart Applicant Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>ResumeRank</span>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#upload" class="nav-link">Upload</a>
+                <a href="#rankings" class="nav-link">Rankings</a>
+                <a href="#analytics" class="nav-link">Analytics</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Smart Resume Analysis & 
+                    <span class="gradient-text">Applicant Ranking</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Leverage AI-powered technology to analyze resumes, extract key insights, 
+                    and rank candidates automatically based on customizable criteria.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="scrollToUpload()">
+                        <i class="fas fa-upload"></i> Upload Resumes
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadDemoData()">
+                        <i class="fas fa-play"></i> View Demo
+                    </button>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalResumes">0</div>
+                    <div class="stat-label">Resumes Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgScore">0</div>
+                    <div class="stat-label">Avg Match Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="topCandidates">0</div>
+                    <div class="stat-label">Top Candidates</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section" id="upload">
+        <div class="container">
+            <h2 class="section-title">Upload Resumes</h2>
+            <p class="section-subtitle">Upload multiple resumes to analyze and rank candidates</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <h3>Drag & Drop Resumes Here</h3>
+                    <p>or click to browse files</p>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" hidden>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
+                </div>
+            </div>
+
+            <div class="criteria-section">
+                <h3>Ranking Criteria</h3>
+                <div class="criteria-grid">
+                    <div class="criteria-item">
+                        <label>Experience Weight</label>
+                        <input type="range" class="slider" id="experienceWeight" min="0" max="100" value="30">
+                        <span class="slider-value">30%</span>
+                    </div>
+                    <div class="criteria-item">
+                        <label>Skills Match Weight</label>
+                        <input type="range" class="slider" id="skillsWeight" min="0" max="100" value="40">
+                        <span class="slider-value">40%</span>
+                    </div>
+                    <div class="criteria-item">
+                        <label>Education Weight</label>
+                        <input type="range" class="slider" id="educationWeight" min="0" max="100" value="20">
+                        <span class="slider-value">20%</span>
+                    </div>
+                    <div class="criteria-item">
+                        <label>Keywords Weight</label>
+                        <input type="range" class="slider" id="keywordsWeight" min="0" max="100" value="10">
+                        <span class="slider-value">10%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rankings Section -->
+    <section class="rankings-section" id="rankings">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Candidate Rankings</h2>
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search candidates..." id="searchInput">
+                </div>
+                <select class="filter-select" id="filterScore">
+                    <option value="all">All Scores</option>
+                    <option value="high">High (80-100)</option>
+                    <option value="medium">Medium (60-79)</option>
+                    <option value="low">Low (0-59)</option>
+                </select>
+                <select class="filter-select" id="filterExperience">
+                    <option value="all">All Experience</option>
+                    <option value="senior">Senior (5+ years)</option>
+                    <option value="mid">Mid-level (2-5 years)</option>
+                    <option value="junior">Junior (0-2 years)</option>
+                </select>
+            </div>
+
+            <div class="candidates-grid" id="candidatesContainer">
+                <!-- Candidates will be dynamically inserted here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section class="analytics-section" id="analytics">
+        <div class="container">
+            <h2 class="section-title">Analytics Dashboard</h2>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Score Distribution</h3>
+                    <div class="chart-container" id="scoreChart">
+                        <canvas id="distributionCanvas"></canvas>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Top Skills</h3>
+                    <div class="skills-list" id="topSkillsList">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Experience Breakdown</h3>
+                    <div class="experience-chart" id="experienceChart">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Candidate Detail Modal -->
+    <div class="modal" id="candidateModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
